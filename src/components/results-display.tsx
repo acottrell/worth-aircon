@@ -48,9 +48,17 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
     () => computeVerdict(summaries, mode),
     [summaries, mode]
   );
+
+  const overnightAvg = useMemo(() => {
+    const overnightSummaries = results.years.map((y) =>
+      summarizeYear(y, "overnight", overnightThreshold, daytimeThreshold)
+    );
+    return computeVerdict(overnightSummaries, "overnight").averageCount;
+  }, [results.years, overnightThreshold, daytimeThreshold]);
+
   const cost = useMemo(
-    () => estimateCost(verdict.averageCount),
-    [verdict.averageCount]
+    () => estimateCost(overnightAvg),
+    [overnightAvg]
   );
 
   const countLabel =
@@ -112,9 +120,7 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
         />
       )}
 
-      {mode !== "daytime" && (
-        <CostContext cost={cost} avgWarmNights={verdict.averageCount} />
-      )}
+      <CostContext cost={cost} avgWarmNights={overnightAvg} />
 
       <div className="flex justify-center">
         <ShareButton
