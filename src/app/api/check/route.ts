@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkRequestSchema } from "@/lib/validation";
 import { lookupPostcode } from "@/lib/postcode";
-import { fetchHistoricalWeather } from "@/lib/weather";
+import { fetchHistoricalWeather, RateLimitedError } from "@/lib/weather";
 import { calculateNightlyMinTemps } from "@/lib/calculator";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { YEARS_TO_ANALYZE, NIGHTTIME_START_HOUR, NIGHTTIME_END_HOUR } from "@/lib/constants";
@@ -53,7 +53,16 @@ export async function POST(request: NextRequest) {
       geo.longitude,
       years
     );
-  } catch {
+  } catch (err) {
+    if (err instanceof RateLimitedError) {
+      return NextResponse.json(
+        {
+          error:
+            "We're experiencing high demand right now. Please try again in a few minutes.",
+        },
+        { status: 503, headers: { "Retry-After": "120" } }
+      );
+    }
     return NextResponse.json(
       { error: "Weather data unavailable. Try again shortly." },
       { status: 502 }

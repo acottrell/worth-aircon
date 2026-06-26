@@ -1,4 +1,5 @@
 import { OPEN_METEO_ARCHIVE_API } from "./constants";
+import { cacheGet, cacheSet } from "./cache";
 
 const OPEN_METEO_FORECAST_API = "https://api.open-meteo.com/v1/forecast";
 
@@ -11,32 +12,31 @@ interface WeatherResponse {
   hourly: HourlyData;
 }
 
-const cache = new Map<string, { data: WeatherResponse; timestamp: number }>();
-const HISTORICAL_TTL = 24 * 60 * 60 * 1000;
-const CURRENT_YEAR_TTL = 6 * 60 * 60 * 1000;
-const RECENT_TTL = 60 * 60 * 1000;
+export class RateLimitedError extends Error {
+  constructor() {
+    super(
+      "Weather service is experiencing high demand. Please try again in a few minutes."
+    );
+    this.name = "RateLimitedError";
+  }
+}
 
-function cacheKey(prefix: string, lat: number, lon: number, extra: string) {
-  return `${prefix}:${lat.toFixed(2)}:${lon.toFixed(2)}:${extra}`;
+function weatherCacheKey(
+  prefix: string,
+  lat: number,
+  lon: number,
+  extra: string
+) {
+  return `weather:${prefix}:${lat.toFixed(2)}:${lon.toFixed(2)}:${extra}`;
 }
 
 function formatDate(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
-async function fetchCached(
-  key: string,
-  ttl: number,
-  fetcher: () => Promise<WeatherResponse>
-): Promise<WeatherResponse> {
-  const cached = cache.get(key);
-  if (cached && Date.now() - cached.timestamp < ttl) {
-    return cached.data;
-  }
-  const data = await fetcher();
-  cache.set(key, { data, timestamp: Date.now() });
-  return data;
-}
+const HISTORICAL_TTL_S = 24 * 60 * 60;
+const CURRENT_YEAR_TTL_S = 6 * 60 * 60;
+const RECENT_TTL_S = 60 * 60;
 
 async function fetchArchiveBatch(
   lat: number,
@@ -45,57 +45,66 @@ async function fetchArchiveBatch(
   endYear: number
 ): Promise<WeatherResponse> {
   const currentYear = new Date().getFullYear();
-  const ttl = endYear >= currentYear ? CURRENT_YEAR_TTL : HISTORICAL_TTL;
-  const key = cacheKey("archive", lat, lon, `${startYear}:${endYear}`);
+  const ttl =
+    endYear >= currentYear ? CURRENT_YEAR_TTL_S : HISTORICAL_TTL_S;
+  const key = weatherCacheKey("archive", lat, lon, `${startYear}:${endYear}`);
 
-  return fetchCached(key, ttl, async () => {
-    const startDate = `${startYear}-01-01`;
-    let endDate: string;
-    if (endYear >= currentYear) {
-      const d = new Date();
-      d.setDate(d.getDate() - 5);
-      endDate = formatDate(d);
-    } else {
-      endDate = `${endYear}-12-31`;
-    }
+  const cached = await cacheGet<WeatherResponse>(key);
+  if (cached) return cached;
 
-    const url = new URL(OPEN_METEO_ARCHIVE_API);
-    url.searchParams.set("latitude", lat.toFixed(4));
-    url.searchParams.set("longitude", lon.toFixed(4));
-    url.searchParams.set("start_date", startDate);
-    url.searchParams.set("end_date", endDate);
-    url.searchParams.set("hourly", "temperature_2m");
-    url.searchParams.set("timezone", "Europe/London");
+  const startDate = `${startYear}-01-01`;
+  let endDate: string;
+  if (endYear >= currentYear) {
+    const d = new Date();
+    d.setDate(d.getDate() - 5);
+    endDate = formatDate(d);
+  } else {
+    endDate = `${endYear}-12-31`;
+  }
 
-    const res = await fetch(url.toString());
-    if (!res.ok) {
-      throw new Error(`Weather data unavailable (${res.status})`);
-    }
-    return res.json();
-  });
+  const url = new URL(OPEN_METEO_ARCHIVE_API);
+  url.searchParams.set("latitude", lat.toFixed(4));
+  url.searchParams.set("longitude", lon.toFixed(4));
+  url.searchParams.set("start_date", startDate);
+  url.searchParams.set("end_date", endDate);
+  url.searchParams.set("hourly", "temperature_2m");
+  url.searchParams.set("timezone", "Europe/London");
+
+  const res = await fetch(url.toString());
+  if (res.status === 429) throw new RateLimitedError();
+  if (!res.ok) {
+    throw new Error(`Weather data unavailable (${res.status})`);
+  }
+  const data: WeatherResponse = await res.json();
+  await cacheSet(key, data, ttl);
+  return data;
 }
 
 async function fetchRecentDays(
   lat: number,
   lon: number
 ): Promise<WeatherResponse> {
-  const key = cacheKey("recent", lat, lon, "7d");
+  const key = weatherCacheKey("recent", lat, lon, "7d");
 
-  return fetchCached(key, RECENT_TTL, async () => {
-    const url = new URL(OPEN_METEO_FORECAST_API);
-    url.searchParams.set("latitude", lat.toFixed(4));
-    url.searchParams.set("longitude", lon.toFixed(4));
-    url.searchParams.set("hourly", "temperature_2m");
-    url.searchParams.set("timezone", "Europe/London");
-    url.searchParams.set("past_days", "10");
-    url.searchParams.set("forecast_days", "0");
+  const cached = await cacheGet<WeatherResponse>(key);
+  if (cached) return cached;
 
-    const res = await fetch(url.toString());
-    if (!res.ok) {
-      throw new Error(`Recent weather data unavailable (${res.status})`);
-    }
-    return res.json();
-  });
+  const url = new URL(OPEN_METEO_FORECAST_API);
+  url.searchParams.set("latitude", lat.toFixed(4));
+  url.searchParams.set("longitude", lon.toFixed(4));
+  url.searchParams.set("hourly", "temperature_2m");
+  url.searchParams.set("timezone", "Europe/London");
+  url.searchParams.set("past_days", "10");
+  url.searchParams.set("forecast_days", "0");
+
+  const res = await fetch(url.toString());
+  if (res.status === 429) throw new RateLimitedError();
+  if (!res.ok) {
+    throw new Error(`Recent weather data unavailable (${res.status})`);
+  }
+  const data: WeatherResponse = await res.json();
+  await cacheSet(key, data, RECENT_TTL_S);
+  return data;
 }
 
 function chunkYears(years: number[], maxPerBatch: number): number[][] {
