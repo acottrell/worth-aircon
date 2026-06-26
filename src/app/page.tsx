@@ -16,7 +16,7 @@ export default function Home() {
                 Is aircon worth it where you live?
               </h1>
               <p className="text-base text-muted-foreground leading-relaxed max-w-lg">
-                Enter your postcode. We&apos;ll check six years of
+                Enter your postcode. We&apos;ll check ten years of
                 overnight temperatures and tell you straight.
               </p>
             </section>

@@ -5,7 +5,7 @@ export const MAX_THRESHOLD = 30;
 export const NIGHTTIME_START_HOUR = 23;
 export const NIGHTTIME_END_HOUR = 6;
 
-export const YEARS_TO_ANALYZE = 6;
+export const YEARS_TO_ANALYZE = 11;
 
 export const POSTCODES_API = "https://api.postcodes.io/postcodes";
 export const OPEN_METEO_ARCHIVE_API =

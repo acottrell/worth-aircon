@@ -87,7 +87,7 @@ export default async function OgImage() {
             color: "#a0916e",
           }}
         >
-          <span>6 years of data</span>
+          <span>10 years of data</span>
           <span style={{ color: "#D97706" }}>·</span>
           <span>Free</span>
           <span style={{ color: "#D97706" }}>·</span>

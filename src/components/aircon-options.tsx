@@ -50,7 +50,7 @@ function SplitUnitSvg() {
 }
 
 function formatPostcodeForUrl(postcode: string): string {
-  return postcode.toLowerCase().replace(/\s+/g, "-");
+  return postcode.toLowerCase().replace(/\s+/g, "");
 }
 
 interface AirconOptionsProps {

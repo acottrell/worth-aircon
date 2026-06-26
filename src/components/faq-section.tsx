@@ -1,6 +1,7 @@
 interface FaqItem {
   q: string;
   a: string;
+  bullets?: string[];
   link?: { text: string; href: string };
 }
 
@@ -19,7 +20,16 @@ const FAQ_ITEMS: FaqItem[] = [
   },
   {
     q: "I'm not buying aircon. How do I keep cool?",
-    a: "Close curtains and windows on the sunny side of the house during the day. Open windows on opposite sides of the house in the evening to create a through-draught. Use a fan with a bowl of ice in front of it. Sleep with a damp sheet or use a cooling pillow. Avoid cooking with the oven. Keep hydrated. If your bedroom faces south or west, consider sleeping in a cooler room.",
+    a: "",
+    bullets: [
+      "Close curtains and windows on the sunny side during the day",
+      "Open windows on opposite sides in the evening for a through-draught",
+      "Put a bowl of ice in front of a fan",
+      "Sleep with a damp sheet or use a cooling pillow",
+      "Avoid cooking with the oven",
+      "Stay hydrated",
+      "If your bedroom faces south or west, try sleeping in a cooler room",
+    ],
     link: {
       text: "More tips from the NHS",
       href: "https://www.nhs.uk/live-well/seasonal-health/heatwave-how-to-cope-in-hot-weather/",
@@ -47,10 +57,16 @@ export function FaqSection() {
           <div key={item.q} className="space-y-1.5">
             <dt className="font-heading font-medium text-sm">{item.q}</dt>
             <dd className="text-sm text-muted-foreground leading-relaxed">
-              {item.a}
+              {item.a && <p>{item.a}</p>}
+              {item.bullets && (
+                <ul className="list-disc pl-4 space-y-1 mt-1">
+                  {item.bullets.map((b) => (
+                    <li key={b}>{b}</li>
+                  ))}
+                </ul>
+              )}
               {item.link && (
-                <>
-                  {" "}
+                <p className="mt-2">
                   <a
                     href={item.link.href}
                     className="underline decoration-border hover:text-foreground hover:decoration-foreground transition-colors"
@@ -59,7 +75,7 @@ export function FaqSection() {
                   >
                     {item.link.text} →
                   </a>
-                </>
+                </p>
               )}
             </dd>
           </div>
@@ -77,7 +93,9 @@ export function FaqSection() {
               name: item.q,
               acceptedAnswer: {
                 "@type": "Answer",
-                text: item.a,
+                text: item.bullets
+                  ? item.bullets.join(". ") + "."
+                  : item.a,
               },
             })),
           }),

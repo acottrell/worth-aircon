@@ -8,7 +8,7 @@ export function MethodologySection() {
       <div className="text-sm text-muted-foreground space-y-2">
         <p>
           We look up your postcode to find your location, then pull
-          hourly temperature data for the past six years from Open-Meteo,
+          hourly temperature data for the past ten years from Open-Meteo,
           a free weather archive.
         </p>
         <p>
