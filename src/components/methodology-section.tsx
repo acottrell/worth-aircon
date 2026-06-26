@@ -12,7 +12,7 @@ export function MethodologySection() {
           a free weather archive.
         </p>
         <p>
-          <strong>Overnight</strong> checks the outside temperature
+          <strong>Overnight</strong>{" "}checks the outside temperature
           between 6pm and 6am. If it never drops below the threshold
           (default 16°C), that counts as a warm night. Opening windows
           alone won&apos;t cool your bedroom into the NHS recommended 16

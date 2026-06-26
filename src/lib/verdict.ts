@@ -15,7 +15,7 @@ const SPLIT_KW = 0.4;
 const SPLIT_LIFESPAN_YEARS = 10;
 
 const NIGHT_HOURS = 8;
-const UK_ELECTRICITY_RATE = 0.245;
+const UK_ELECTRICITY_RATE = 0.26;
 
 export function summarizeYear(
   yearData: YearData,

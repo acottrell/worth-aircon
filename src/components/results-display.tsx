@@ -50,15 +50,26 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
   );
 
   const overnightAvg = useMemo(() => {
-    const overnightSummaries = results.years.map((y) =>
+    const s = results.years.map((y) =>
       summarizeYear(y, "overnight", overnightThreshold, daytimeThreshold)
     );
-    return computeVerdict(overnightSummaries, "overnight").averageCount;
+    return computeVerdict(s, "overnight").averageCount;
   }, [results.years, overnightThreshold, daytimeThreshold]);
 
-  const cost = useMemo(
+  const daytimeAvg = useMemo(() => {
+    const s = results.years.map((y) =>
+      summarizeYear(y, "daytime", overnightThreshold, daytimeThreshold)
+    );
+    return computeVerdict(s, "daytime").averageCount;
+  }, [results.years, overnightThreshold, daytimeThreshold]);
+
+  const overnightCost = useMemo(
     () => estimateCost(overnightAvg),
     [overnightAvg]
+  );
+  const daytimeCost = useMemo(
+    () => estimateCost(daytimeAvg),
+    [daytimeAvg]
   );
 
   const countLabel =
@@ -81,7 +92,7 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
 
       <VerdictCard
         verdict={verdict}
-        cost={cost}
+        cost={overnightCost}
         location={results.location}
         mode={mode}
         countLabel={countLabel}
@@ -120,7 +131,13 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
         />
       )}
 
-      <CostContext cost={cost} avgWarmNights={overnightAvg} />
+      <CostContext
+        mode={mode}
+        overnightCost={overnightCost}
+        daytimeCost={daytimeCost}
+        avgWarmNights={overnightAvg}
+        avgHotDays={daytimeAvg}
+      />
 
       <div className="flex justify-center">
         <ShareButton
