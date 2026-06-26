@@ -75,12 +75,6 @@ export function VerdictCard({ verdict }: VerdictCardProps) {
               </span>
             </div>
           )}
-          {verdict.yearOnYearPercent !== null && verdict.yearOnYearPercent !== 0 && (
-            <p className="text-xs text-muted-foreground">
-              Warm nights {verdict.yearOnYearPercent > 0 ? "increasing" : "decreasing"} by
-              ~{Math.abs(verdict.yearOnYearPercent)}% per year over the last 10 years
-            </p>
-          )}
         </div>
       </div>
     </div>
