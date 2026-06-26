@@ -16,4 +16,4 @@ export const OPEN_METEO_ARCHIVE_API =
 
 export const PORTABLE_UNIT_KW = 1;
 export const NIGHT_HOURS = 8;
-export const UK_ELECTRICITY_RATE_PER_KWH = 0.245;
+export const UK_ELECTRICITY_RATE_PER_KWH = 0.26;
