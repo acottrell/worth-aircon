@@ -45,6 +45,7 @@ export function computeVerdict(summaries: YearSummary[]): Verdict {
       averageWarmNights: 0,
       trend: "stable",
       trendPercent: 0,
+      yearOnYearPercent: null,
       level: "no",
     };
   }
@@ -56,21 +57,32 @@ export function computeVerdict(summaries: YearSummary[]): Verdict {
   const sorted = [...fullYears].sort((a, b) => a.year - b.year);
   let trend: "increasing" | "decreasing" | "stable" = "stable";
   let trendPercent = 0;
+  let yearOnYearPercent: number | null = null;
 
   if (sorted.length >= 4) {
-    const firstHalf = sorted.slice(0, 2);
-    const secondHalf = sorted.slice(-2);
+    const n = Math.min(3, Math.floor(sorted.length / 2));
+    const firstN = sorted.slice(0, n);
+    const lastN = sorted.slice(-n);
     const firstAvg =
-      firstHalf.reduce((s, y) => s + y.warmNights, 0) / firstHalf.length;
-    const secondAvg =
-      secondHalf.reduce((s, y) => s + y.warmNights, 0) / secondHalf.length;
+      firstN.reduce((s, y) => s + y.warmNights, 0) / firstN.length;
+    const lastAvg =
+      lastN.reduce((s, y) => s + y.warmNights, 0) / lastN.length;
 
     if (firstAvg > 0) {
       trendPercent = Math.round(
-        ((secondAvg - firstAvg) / firstAvg) * 100
+        ((lastAvg - firstAvg) / firstAvg) * 100
       );
-      if (trendPercent > 30) trend = "increasing";
-      else if (trendPercent < -30) trend = "decreasing";
+      if (trendPercent > 20) trend = "increasing";
+      else if (trendPercent < -20) trend = "decreasing";
+    }
+
+    if (sorted.length >= 3 && firstAvg > 0) {
+      const yearsSpan = sorted[sorted.length - 1].year - sorted[0].year;
+      if (yearsSpan > 0) {
+        const ratio = lastAvg / firstAvg;
+        const annualGrowth = (Math.pow(ratio, 1 / yearsSpan) - 1) * 100;
+        yearOnYearPercent = Math.round(annualGrowth * 10) / 10;
+      }
     }
   }
 
@@ -80,6 +92,7 @@ export function computeVerdict(summaries: YearSummary[]): Verdict {
     averageWarmNights: Math.round(avg * 10) / 10,
     trend,
     trendPercent,
+    yearOnYearPercent,
     level,
   };
 }

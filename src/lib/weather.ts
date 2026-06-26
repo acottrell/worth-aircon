@@ -98,32 +98,39 @@ async function fetchRecentDays(
   });
 }
 
+function chunkYears(years: number[], maxPerBatch: number): number[][] {
+  const sorted = [...years].sort((a, b) => a - b);
+  const chunks: number[][] = [];
+  for (let i = 0; i < sorted.length; i += maxPerBatch) {
+    chunks.push(sorted.slice(i, i + maxPerBatch));
+  }
+  return chunks;
+}
+
 export async function fetchHistoricalWeather(
   lat: number,
   lon: number,
   years: number[]
 ): Promise<HourlyData> {
-  const sorted = [...years].sort((a, b) => a - b);
-  const mid = Math.ceil(sorted.length / 2);
-  const batch1Years = sorted.slice(0, mid);
-  const batch2Years = sorted.slice(mid);
+  const chunks = chunkYears(years, 3);
 
-  const startYear1 = batch1Years[0];
-  const endYear1 = batch1Years[batch1Years.length - 1];
-  const startYear2 = batch2Years[0];
-  const endYear2 = batch2Years[batch2Years.length - 1];
+  const batchPromises = chunks.map((chunk) =>
+    fetchArchiveBatch(lat, lon, chunk[0], chunk[chunk.length - 1])
+  );
+  const recentPromise = fetchRecentDays(lat, lon).catch(() => null);
 
-  const [resp1, resp2, recentResp] = await Promise.all([
-    fetchArchiveBatch(lat, lon, startYear1, endYear1),
-    fetchArchiveBatch(lat, lon, startYear2, endYear2),
-    fetchRecentDays(lat, lon).catch(() => null),
+  const [recentResp, ...batchResps] = await Promise.all([
+    recentPromise,
+    ...batchPromises,
   ]);
 
-  const allTimes = [...resp1.hourly.time, ...resp2.hourly.time];
-  const allTemps = [
-    ...resp1.hourly.temperature_2m,
-    ...resp2.hourly.temperature_2m,
-  ];
+  const allTimes: string[] = [];
+  const allTemps: (number | null)[] = [];
+
+  for (const resp of batchResps) {
+    allTimes.push(...resp.hourly.time);
+    allTemps.push(...resp.hourly.temperature_2m);
+  }
 
   if (recentResp) {
     const archiveEnd = allTimes[allTimes.length - 1] ?? "";

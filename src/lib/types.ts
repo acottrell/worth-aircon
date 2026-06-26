@@ -38,6 +38,7 @@ export interface Verdict {
   averageWarmNights: number;
   trend: "increasing" | "decreasing" | "stable";
   trendPercent: number;
+  yearOnYearPercent: number | null;
   level: "no" | "borderline" | "yes";
 }
 

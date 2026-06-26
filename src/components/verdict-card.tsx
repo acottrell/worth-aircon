@@ -70,10 +70,16 @@ export function VerdictCard({ verdict }: VerdictCardProps) {
               <TrendIcon className="h-3.5 w-3.5" />
               <span>
                 {Math.abs(verdict.trendPercent)}%{" "}
-                {verdict.trend === "increasing" ? "more" : "fewer"} vs 5
-                years ago
+                {verdict.trend === "increasing" ? "more" : "fewer"} warm
+                nights than a decade ago
               </span>
             </div>
+          )}
+          {verdict.yearOnYearPercent !== null && verdict.yearOnYearPercent !== 0 && (
+            <p className="text-xs text-muted-foreground">
+              Warm nights {verdict.yearOnYearPercent > 0 ? "increasing" : "decreasing"} by
+              ~{Math.abs(verdict.yearOnYearPercent)}% per year over the last 10 years
+            </p>
           )}
         </div>
       </div>

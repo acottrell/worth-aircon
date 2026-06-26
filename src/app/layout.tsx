@@ -21,7 +21,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Worth Aircon? | Is air conditioning worth it where you live?",
   description:
-    "Enter your UK postcode to see how many nights per year are too warm to sleep comfortably. Based on six years of real temperature data. Independent and free.",
+    "Enter your UK postcode to see how many nights per year are too warm to sleep comfortably. Based on ten years of real temperature data. Independent and free.",
   keywords: [
     "air conditioning UK",
     "is aircon worth it",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Worth Aircon? | Is air conditioning worth it where you live?",
     description:
-      "Enter your UK postcode to see how many nights are too warm to sleep. Six years of real data. No sales pitch.",
+      "Enter your UK postcode to see how many nights are too warm to sleep. Ten years of real data. No sales pitch.",
     siteName: "Worth Aircon?",
     type: "website",
     locale: "en_GB",
