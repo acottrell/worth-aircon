@@ -2,9 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkRequestSchema } from "@/lib/validation";
 import { lookupPostcode } from "@/lib/postcode";
 import { fetchHistoricalWeather, RateLimitedError } from "@/lib/weather";
-import { calculateNightlyMinTemps } from "@/lib/calculator";
+import { calculateTemperatureData } from "@/lib/calculator";
 import { enforceRateLimit } from "@/lib/rate-limit";
-import { YEARS_TO_ANALYZE, NIGHTTIME_START_HOUR, NIGHTTIME_END_HOUR } from "@/lib/constants";
+import {
+  YEARS_TO_ANALYZE,
+  OVERNIGHT_START_HOUR,
+  OVERNIGHT_END_HOUR,
+  DAYTIME_START_HOUR,
+  DAYTIME_END_HOUR,
+} from "@/lib/constants";
 import type { CheckResponse } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
@@ -69,7 +75,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const yearData = calculateNightlyMinTemps(
+  const yearData = calculateTemperatureData(
     hourlyData.time,
     hourlyData.temperature_2m,
     years
@@ -84,9 +90,13 @@ export async function POST(request: NextRequest) {
     location: location || geo.postcode,
     latitude: geo.latitude,
     longitude: geo.longitude,
-    nighttimeWindow: {
-      startHour: NIGHTTIME_START_HOUR,
-      endHour: NIGHTTIME_END_HOUR,
+    overnightWindow: {
+      startHour: OVERNIGHT_START_HOUR,
+      endHour: OVERNIGHT_END_HOUR,
+    },
+    daytimeWindow: {
+      startHour: DAYTIME_START_HOUR,
+      endHour: DAYTIME_END_HOUR,
     },
     years: yearData,
   };

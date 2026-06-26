@@ -6,15 +6,23 @@ export interface PostcodeResult {
   region: string;
 }
 
+export type ViewMode = "overnight" | "daytime" | "both";
+
 export interface NightData {
   date: string;
   minTemp: number;
+}
+
+export interface DayData {
+  date: string;
+  maxTemp: number;
 }
 
 export interface YearData {
   year: number;
   isPartialYear: boolean;
   nights: NightData[];
+  days: DayData[];
 }
 
 export interface CheckResponse {
@@ -22,23 +30,23 @@ export interface CheckResponse {
   location: string;
   latitude: number;
   longitude: number;
-  nighttimeWindow: { startHour: number; endHour: number };
+  overnightWindow: { startHour: number; endHour: number };
+  daytimeWindow: { startHour: number; endHour: number };
   years: YearData[];
 }
 
 export interface YearSummary {
   year: number;
-  warmNights: number;
-  totalNights: number;
-  hottestNight: NightData | null;
+  count: number;
+  total: number;
+  peakEntry: { date: string; temp: number } | null;
   isPartialYear: boolean;
 }
 
 export interface Verdict {
-  averageWarmNights: number;
+  averageCount: number;
   trend: "increasing" | "decreasing" | "stable";
   trendPercent: number;
-  yearOnYearPercent: number | null;
   level: "no" | "borderline" | "yes";
 }
 

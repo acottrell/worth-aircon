@@ -1,19 +1,21 @@
 "use client";
 
-import type { Verdict, CostEstimate } from "@/lib/types";
+import type { Verdict, CostEstimate, ViewMode } from "@/lib/types";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 
 interface VerdictCardProps {
   verdict: Verdict;
   cost: CostEstimate;
   location: string;
+  mode: ViewMode;
+  countLabel: string;
 }
 
 const VERDICT_CONFIG = {
   no: {
     label: "Probably not worth it",
     description:
-      "Your area doesn't get enough warm nights to justify the cost.",
+      "Your area doesn't get enough extreme temperatures to justify the cost.",
     border: "border-l-emerald-500",
     accent: "text-emerald-700 dark:text-emerald-400",
   },
@@ -27,13 +29,13 @@ const VERDICT_CONFIG = {
   yes: {
     label: "Worth considering",
     description:
-      "Your area gets enough warm nights that aircon would meaningfully improve your sleep.",
+      "Your area gets enough heat that aircon would make a real difference to your comfort.",
     border: "border-l-orange-500",
     accent: "text-orange-600 dark:text-orange-400",
   },
 } as const;
 
-export function VerdictCard({ verdict }: VerdictCardProps) {
+export function VerdictCard({ verdict, mode, countLabel }: VerdictCardProps) {
   const config = VERDICT_CONFIG[verdict.level];
   const TrendIcon =
     verdict.trend === "increasing"
@@ -51,10 +53,10 @@ export function VerdictCard({ verdict }: VerdictCardProps) {
           <p
             className={`text-4xl sm:text-5xl font-heading font-bold tabular-nums ${config.accent}`}
           >
-            {verdict.averageWarmNights}
+            {verdict.averageCount}
           </p>
           <p className="text-sm text-muted-foreground">
-            warm nights per year, on average
+            {countLabel} per year, on average
           </p>
         </div>
 
@@ -63,15 +65,19 @@ export function VerdictCard({ verdict }: VerdictCardProps) {
             {config.label}
           </p>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            {config.description}
+            {mode === "daytime"
+              ? "Based on how many days per year your area exceeds the temperature threshold during the day."
+              : mode === "both"
+                ? "Based on the combined count of hot days and warm nights in your area."
+                : config.description}
           </p>
           {verdict.trend !== "stable" && (
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <TrendIcon className="h-3.5 w-3.5" />
               <span>
                 {Math.abs(verdict.trendPercent)}%{" "}
-                {verdict.trend === "increasing" ? "more" : "fewer"} warm
-                nights than a decade ago
+                {verdict.trend === "increasing" ? "more" : "fewer"}{" "}
+                {countLabel} than a decade ago
               </span>
             </div>
           )}
