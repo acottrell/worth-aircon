@@ -4,7 +4,8 @@
 
 [Live site](https://worthaircon.com) — Enter a UK postcode, get 10 years of overnight temperature data and a straight answer.
 
-![Worth Aircon desktop](docs/worth-aircon-desktop.png)
+<img width="3104" height="1974" alt="Screenshot 2026-06-26 at 10 39 09" src="https://github.com/user-attachments/assets/f79bda45-012a-4017-8ded-5db273e45bff" />
+
 
 ---
 
