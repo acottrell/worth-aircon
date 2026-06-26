@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MIN_THRESHOLD, MAX_THRESHOLD, DEFAULT_THRESHOLD_CELSIUS } from "./constants";
+import { MIN_THRESHOLD, MAX_THRESHOLD, DEFAULT_OVERNIGHT_THRESHOLD } from "./constants";
 
 const UK_POSTCODE_REGEX = /^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i;
 
@@ -12,7 +12,7 @@ export const checkRequestSchema = z.object({
     .number()
     .min(MIN_THRESHOLD)
     .max(MAX_THRESHOLD)
-    .default(DEFAULT_THRESHOLD_CELSIUS),
+    .default(DEFAULT_OVERNIGHT_THRESHOLD),
 });
 
 export type CheckRequest = z.infer<typeof checkRequestSchema>;

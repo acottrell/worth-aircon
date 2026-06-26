@@ -3,7 +3,7 @@ import type {
   YearSummary,
   Verdict,
   CostEstimate,
-  NightData,
+  ViewMode,
 } from "./types";
 
 const PORTABLE_PURCHASE = 300;
@@ -19,80 +19,113 @@ const UK_ELECTRICITY_RATE = 0.245;
 
 export function summarizeYear(
   yearData: YearData,
-  threshold: number
+  mode: ViewMode,
+  overnightThreshold: number,
+  daytimeThreshold: number
 ): YearSummary {
-  const warmNights = yearData.nights.filter(
-    (n) => n.minTemp >= threshold
+  if (mode === "overnight") {
+    const warm = yearData.nights.filter(
+      (n) => n.minTemp >= overnightThreshold
+    );
+    const peak = yearData.nights.reduce<{ date: string; temp: number } | null>(
+      (max, n) => (!max || n.minTemp > max.temp ? { date: n.date, temp: n.minTemp } : max),
+      null
+    );
+    return {
+      year: yearData.year,
+      count: warm.length,
+      total: yearData.nights.length,
+      peakEntry: peak,
+      isPartialYear: yearData.isPartialYear,
+    };
+  }
+
+  if (mode === "daytime") {
+    const hot = yearData.days.filter(
+      (d) => d.maxTemp >= daytimeThreshold
+    );
+    const peak = yearData.days.reduce<{ date: string; temp: number } | null>(
+      (max, d) => (!max || d.maxTemp > max.temp ? { date: d.date, temp: d.maxTemp } : max),
+      null
+    );
+    return {
+      year: yearData.year,
+      count: hot.length,
+      total: yearData.days.length,
+      peakEntry: peak,
+      isPartialYear: yearData.isPartialYear,
+    };
+  }
+
+  // "both" — unique dates that had a hot day OR a warm night
+  const hotDays = new Set(
+    yearData.days
+      .filter((d) => d.maxTemp >= daytimeThreshold)
+      .map((d) => d.date)
   );
-  const hottestNight = yearData.nights.reduce<NightData | null>(
-    (max, n) => (!max || n.minTemp > max.minTemp ? n : max),
+  const warmNights = new Set(
+    yearData.nights
+      .filter((n) => n.minTemp >= overnightThreshold)
+      .map((n) => n.date)
+  );
+  const combined = new Set([...hotDays, ...warmNights]);
+
+  const allDayTemps = yearData.days.reduce<{ date: string; temp: number } | null>(
+    (max, d) => (!max || d.maxTemp > max.temp ? { date: d.date, temp: d.maxTemp } : max),
     null
   );
 
   return {
     year: yearData.year,
-    warmNights: warmNights.length,
-    totalNights: yearData.nights.length,
-    hottestNight,
+    count: combined.size,
+    total: Math.max(yearData.days.length, yearData.nights.length),
+    peakEntry: allDayTemps,
     isPartialYear: yearData.isPartialYear,
   };
 }
 
-export function computeVerdict(summaries: YearSummary[]): Verdict {
+export function computeVerdict(summaries: YearSummary[], mode: ViewMode): Verdict {
   const fullYears = summaries.filter((s) => !s.isPartialYear);
   if (fullYears.length === 0) {
-    return {
-      averageWarmNights: 0,
-      trend: "stable",
-      trendPercent: 0,
-      yearOnYearPercent: null,
-      level: "no",
-    };
+    return { averageCount: 0, trend: "stable", trendPercent: 0, level: "no" };
   }
 
   const avg =
-    fullYears.reduce((sum, y) => sum + y.warmNights, 0) /
-    fullYears.length;
+    fullYears.reduce((sum, y) => sum + y.count, 0) / fullYears.length;
 
   const sorted = [...fullYears].sort((a, b) => a.year - b.year);
   let trend: "increasing" | "decreasing" | "stable" = "stable";
   let trendPercent = 0;
-  let yearOnYearPercent: number | null = null;
 
   if (sorted.length >= 4) {
     const n = Math.min(3, Math.floor(sorted.length / 2));
     const firstN = sorted.slice(0, n);
     const lastN = sorted.slice(-n);
     const firstAvg =
-      firstN.reduce((s, y) => s + y.warmNights, 0) / firstN.length;
+      firstN.reduce((s, y) => s + y.count, 0) / firstN.length;
     const lastAvg =
-      lastN.reduce((s, y) => s + y.warmNights, 0) / lastN.length;
+      lastN.reduce((s, y) => s + y.count, 0) / lastN.length;
 
     if (firstAvg > 0) {
-      trendPercent = Math.round(
-        ((lastAvg - firstAvg) / firstAvg) * 100
-      );
+      trendPercent = Math.round(((lastAvg - firstAvg) / firstAvg) * 100);
       if (trendPercent > 20) trend = "increasing";
       else if (trendPercent < -20) trend = "decreasing";
     }
-
-    if (sorted.length >= 3 && firstAvg > 0) {
-      const yearsSpan = sorted[sorted.length - 1].year - sorted[0].year;
-      if (yearsSpan > 0) {
-        const ratio = lastAvg / firstAvg;
-        const annualGrowth = (Math.pow(ratio, 1 / yearsSpan) - 1) * 100;
-        yearOnYearPercent = Math.round(annualGrowth * 10) / 10;
-      }
-    }
   }
 
-  const level = avg < 5 ? "no" : avg > 15 ? "yes" : "borderline";
+  let level: "no" | "borderline" | "yes";
+  if (mode === "daytime") {
+    level = avg < 15 ? "no" : avg > 40 ? "yes" : "borderline";
+  } else if (mode === "both") {
+    level = avg < 20 ? "no" : avg > 50 ? "yes" : "borderline";
+  } else {
+    level = avg < 5 ? "no" : avg > 15 ? "yes" : "borderline";
+  }
 
   return {
-    averageWarmNights: Math.round(avg * 10) / 10,
+    averageCount: Math.round(avg * 10) / 10,
     trend,
     trendPercent,
-    yearOnYearPercent,
     level,
   };
 }

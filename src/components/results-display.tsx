@@ -1,21 +1,31 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
-import type { CheckResponse } from "@/lib/types";
+import type { CheckResponse, ViewMode } from "@/lib/types";
 import { summarizeYear, computeVerdict, estimateCost } from "@/lib/verdict";
-import { DEFAULT_THRESHOLD_CELSIUS } from "@/lib/constants";
+import {
+  DEFAULT_OVERNIGHT_THRESHOLD,
+  DEFAULT_DAYTIME_THRESHOLD,
+} from "@/lib/constants";
 import { VerdictCard } from "./verdict-card";
 import { TrendChart } from "./trend-chart";
 import { ThresholdSlider } from "./threshold-slider";
 import { CostContext } from "./cost-context";
 import { ShareButton } from "./share-button";
+import { ViewSwitcher } from "./view-switcher";
 
 interface ResultsDisplayProps {
   results: CheckResponse;
 }
 
 export function ResultsDisplay({ results }: ResultsDisplayProps) {
-  const [threshold, setThreshold] = useState(DEFAULT_THRESHOLD_CELSIUS);
+  const [mode, setMode] = useState<ViewMode>("overnight");
+  const [overnightThreshold, setOvernightThreshold] = useState(
+    DEFAULT_OVERNIGHT_THRESHOLD
+  );
+  const [daytimeThreshold, setDaytimeThreshold] = useState(
+    DEFAULT_DAYTIME_THRESHOLD
+  );
   const topRef = useRef<HTMLDivElement>(null);
   const hasScrolled = useRef(false);
 
@@ -27,15 +37,28 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
   }, []);
 
   const summaries = useMemo(
-    () => results.years.map((y) => summarizeYear(y, threshold)),
-    [results.years, threshold]
+    () =>
+      results.years.map((y) =>
+        summarizeYear(y, mode, overnightThreshold, daytimeThreshold)
+      ),
+    [results.years, mode, overnightThreshold, daytimeThreshold]
   );
 
-  const verdict = useMemo(() => computeVerdict(summaries), [summaries]);
-  const cost = useMemo(
-    () => estimateCost(verdict.averageWarmNights),
-    [verdict.averageWarmNights]
+  const verdict = useMemo(
+    () => computeVerdict(summaries, mode),
+    [summaries, mode]
   );
+  const cost = useMemo(
+    () => estimateCost(verdict.averageCount),
+    [verdict.averageCount]
+  );
+
+  const countLabel =
+    mode === "overnight"
+      ? "warm nights"
+      : mode === "daytime"
+        ? "hot days"
+        : "uncomfortable days";
 
   return (
     <div ref={topRef} className="w-full space-y-6 scroll-mt-20">
@@ -46,23 +69,59 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
         </span>
       </p>
 
+      <ViewSwitcher mode={mode} onChange={setMode} />
+
       <VerdictCard
         verdict={verdict}
         cost={cost}
         location={results.location}
+        mode={mode}
+        countLabel={countLabel}
       />
 
-      <TrendChart summaries={summaries} />
+      <TrendChart summaries={summaries} mode={mode} countLabel={countLabel} />
 
-      <ThresholdSlider value={threshold} onChange={setThreshold} />
+      {mode === "both" ? (
+        <div className="w-full max-w-md mx-auto space-y-4">
+          <ThresholdSlider
+            label="Overnight threshold"
+            defaultLabel="16°C (NHS sleep range)"
+            value={overnightThreshold}
+            onChange={setOvernightThreshold}
+          />
+          <ThresholdSlider
+            label="Daytime threshold"
+            defaultLabel="25°C (Met Office hot day)"
+            value={daytimeThreshold}
+            onChange={setDaytimeThreshold}
+          />
+        </div>
+      ) : mode === "daytime" ? (
+        <ThresholdSlider
+          label="Daytime temperature threshold"
+          defaultLabel="25°C (Met Office hot day)"
+          value={daytimeThreshold}
+          onChange={setDaytimeThreshold}
+        />
+      ) : (
+        <ThresholdSlider
+          label="Overnight temperature threshold"
+          defaultLabel="16°C (NHS ideal sleep range)"
+          value={overnightThreshold}
+          onChange={setOvernightThreshold}
+        />
+      )}
 
-      <CostContext cost={cost} avgWarmNights={verdict.averageWarmNights} />
+      {mode !== "daytime" && (
+        <CostContext cost={cost} avgWarmNights={verdict.averageCount} />
+      )}
 
       <div className="flex justify-center">
         <ShareButton
           location={results.location}
-          warmNights={verdict.averageWarmNights}
+          count={verdict.averageCount}
           postcode={results.postcode}
+          mode={mode}
         />
       </div>
     </div>

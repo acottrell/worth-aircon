@@ -12,14 +12,23 @@ export function MethodologySection() {
           a free weather archive.
         </p>
         <p>
-          For each night, we check the outside temperature between 11pm
-          and 6am. If it never drops below the threshold (default 16°C),
-          that counts as a warm night. Opening windows alone won&apos;t
-          cool your bedroom into the NHS recommended 16 to 18°C sleep
-          range.
+          <strong>Overnight</strong> checks the outside temperature
+          between 6pm and 6am. If it never drops below the threshold
+          (default 16°C), that counts as a warm night. Opening windows
+          alone won&apos;t cool your bedroom into the NHS recommended 16
+          to 18°C sleep range.
         </p>
         <p>
-          The verdict is based on how many of these nights your area
+          <strong>Daytime</strong> checks the peak temperature between
+          6am and 6pm. Days that reach the threshold (default 25°C, the
+          Met Office definition of a hot day) count as hot days.
+        </p>
+        <p>
+          <strong>Both</strong> combines the two: any date that had a
+          hot day, a warm night, or both.
+        </p>
+        <p>
+          The verdict is based on how many of these days your area
           averages per year, and whether the trend is going up or down.
           Cost estimates assume typical unit specs and current UK
           electricity rates.

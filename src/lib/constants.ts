@@ -1,9 +1,12 @@
-export const DEFAULT_THRESHOLD_CELSIUS = 16;
+export const DEFAULT_OVERNIGHT_THRESHOLD = 16;
+export const DEFAULT_DAYTIME_THRESHOLD = 25;
 export const MIN_THRESHOLD = 10;
-export const MAX_THRESHOLD = 30;
+export const MAX_THRESHOLD = 40;
 
-export const NIGHTTIME_START_HOUR = 23;
-export const NIGHTTIME_END_HOUR = 6;
+export const OVERNIGHT_START_HOUR = 18;
+export const OVERNIGHT_END_HOUR = 6;
+export const DAYTIME_START_HOUR = 6;
+export const DAYTIME_END_HOUR = 18;
 
 export const YEARS_TO_ANALYZE = 11;
 

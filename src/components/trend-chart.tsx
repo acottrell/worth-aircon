@@ -1,23 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import type { YearSummary } from "@/lib/types";
+import type { YearSummary, ViewMode } from "@/lib/types";
 
 interface TrendChartProps {
   summaries: YearSummary[];
+  mode: ViewMode;
+  countLabel: string;
 }
 
-function barHue(warmNights: number): string {
-  if (warmNights < 5) return "hsl(150 50% 45%)";
-  if (warmNights <= 10) return "hsl(45 90% 50%)";
-  if (warmNights <= 15) return "hsl(30 90% 50%)";
+function barHue(count: number, mode: ViewMode): string {
+  if (mode === "daytime") {
+    if (count < 15) return "hsl(150 50% 45%)";
+    if (count <= 25) return "hsl(45 90% 50%)";
+    if (count <= 40) return "hsl(30 90% 50%)";
+    return "hsl(15 85% 48%)";
+  }
+  if (count < 5) return "hsl(150 50% 45%)";
+  if (count <= 10) return "hsl(45 90% 50%)";
+  if (count <= 15) return "hsl(30 90% 50%)";
   return "hsl(15 85% 48%)";
 }
 
-export function TrendChart({ summaries }: TrendChartProps) {
+export function TrendChart({ summaries, mode, countLabel }: TrendChartProps) {
   const [hoveredYear, setHoveredYear] = useState<number | null>(null);
-  const maxNights = Math.max(...summaries.map((s) => s.warmNights), 1);
+  const maxCount = Math.max(...summaries.map((s) => s.count), 1);
   const chartHeight = 220;
+
+  const peakLabel =
+    mode === "daytime" ? "peak" : mode === "both" ? "peak" : "overnight low";
 
   return (
     <div className="w-full max-w-md mx-auto animate-fade-up" style={{ animationDelay: "150ms" }}>
@@ -27,10 +38,10 @@ export function TrendChart({ summaries }: TrendChartProps) {
       >
         {summaries.map((s, i) => {
           const height =
-            maxNights > 0
+            maxCount > 0
               ? Math.max(
-                  (s.warmNights / maxNights) * (chartHeight - 40),
-                  s.warmNights > 0 ? 8 : 3
+                  (s.count / maxCount) * (chartHeight - 40),
+                  s.count > 0 ? 8 : 3
                 )
               : 3;
           const isHovered = hoveredYear === s.year;
@@ -55,7 +66,7 @@ export function TrendChart({ summaries }: TrendChartProps) {
                       : "opacity-30"
                 }`}
               >
-                {s.warmNights}
+                {s.count}
               </span>
 
               <div
@@ -66,7 +77,7 @@ export function TrendChart({ summaries }: TrendChartProps) {
                 }`}
                 style={{
                   height,
-                  backgroundColor: barHue(s.warmNights),
+                  backgroundColor: barHue(s.count, mode),
                   animationDelay: `${i * 80}ms`,
                 }}
               />
@@ -98,13 +109,12 @@ export function TrendChart({ summaries }: TrendChartProps) {
                     {s.isPartialYear ? " (so far)" : ""}
                   </span>
                   {": "}
-                  {s.warmNights} warm night
-                  {s.warmNights !== 1 ? "s" : ""}
-                  {s.hottestNight && (
+                  {s.count} {s.count === 1 ? countLabel.replace(/s$/, "") : countLabel}
+                  {s.peakEntry && (
                     <>
-                      {`, overnight low ${s.hottestNight.minTemp}°C on `}
+                      {`, ${peakLabel} ${s.peakEntry.temp}°C on `}
                       {new Date(
-                        s.hottestNight.date
+                        s.peakEntry.date
                       ).toLocaleDateString("en-GB", {
                         month: "short",
                         day: "numeric",

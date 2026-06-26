@@ -3,19 +3,28 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Share2, Check } from "lucide-react";
+import type { ViewMode } from "@/lib/types";
 
 interface ShareButtonProps {
   location: string;
-  warmNights: number;
+  count: number;
   postcode: string;
+  mode: ViewMode;
 }
 
-export function ShareButton({ location, warmNights, postcode }: ShareButtonProps) {
+export function ShareButton({ location, count, postcode, mode }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
+
+  const label =
+    mode === "daytime"
+      ? `days per year over 25°C`
+      : mode === "both"
+        ? `uncomfortable days per year`
+        : `nights per year above 16°C overnight`;
 
   async function handleShare() {
     const url = `https://worthaircon.com/?p=${encodeURIComponent(postcode)}`;
-    const text = `${location} averages ${warmNights} nights per year above 16°C overnight. Check your area:`;
+    const text = `${location} averages ${count} ${label}. Check your area:`;
 
     if (navigator.share) {
       try {

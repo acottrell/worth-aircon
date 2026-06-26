@@ -1,5 +1,10 @@
-import { NIGHTTIME_START_HOUR, NIGHTTIME_END_HOUR } from "./constants";
-import type { NightData, YearData } from "./types";
+import {
+  OVERNIGHT_START_HOUR,
+  OVERNIGHT_END_HOUR,
+  DAYTIME_START_HOUR,
+  DAYTIME_END_HOUR,
+} from "./constants";
+import type { NightData, DayData, YearData } from "./types";
 
 function formatDateISO(d: Date): string {
   const y = d.getFullYear();
@@ -14,7 +19,11 @@ function addDays(d: Date, n: number): Date {
   return r;
 }
 
-export function calculateNightlyMinTemps(
+function hourKey(dateStr: string, hour: number): string {
+  return `${dateStr}T${String(hour).padStart(2, "0")}:00`;
+}
+
+export function calculateTemperatureData(
   hourlyTimes: string[],
   hourlyTemps: (number | null)[],
   years: number[]
@@ -34,42 +43,47 @@ export function calculateNightlyMinTemps(
 
   for (const year of years) {
     const nights: NightData[] = [];
+    const days: DayData[] = [];
     const startDate = new Date(year, 0, 1);
     const endDate =
       year === currentYear ? yesterday : new Date(year, 11, 31);
 
-    for (
-      let d = new Date(startDate);
-      d <= endDate;
-      d = addDays(d, 1)
-    ) {
+    for (let d = new Date(startDate); d <= endDate; d = addDays(d, 1)) {
       const dateStr = formatDateISO(d);
-      const nightHourTemps: number[] = [];
 
-      // 23:00 on this date
-      const key23 = `${dateStr}T${String(NIGHTTIME_START_HOUR).padStart(2, "0")}:00`;
-      const temp23 = tempMap.get(key23);
-      if (temp23 !== undefined) nightHourTemps.push(temp23);
-
-      // 00:00–06:00 on the next date
-      const nextDateStr = formatDateISO(addDays(d, 1));
-      for (let h = 0; h <= NIGHTTIME_END_HOUR; h++) {
-        const hourKey = `${nextDateStr}T${String(h).padStart(2, "0")}:00`;
-        const temp = tempMap.get(hourKey);
-        if (temp !== undefined) nightHourTemps.push(temp);
+      // Daytime: 6am-5pm on this date (hours 6-17)
+      const dayTemps: number[] = [];
+      for (let h = DAYTIME_START_HOUR; h < DAYTIME_END_HOUR; h++) {
+        const temp = tempMap.get(hourKey(dateStr, h));
+        if (temp !== undefined) dayTemps.push(temp);
+      }
+      if (dayTemps.length >= 6) {
+        const maxTemp = Math.round(Math.max(...dayTemps) * 10) / 10;
+        days.push({ date: dateStr, maxTemp });
       }
 
-      if (nightHourTemps.length < 4) continue;
-
-      const minTemp =
-        Math.round(Math.min(...nightHourTemps) * 10) / 10;
-      nights.push({ date: dateStr, minTemp });
+      // Overnight: 6pm-11pm on this date + midnight-5am next day
+      const nightTemps: number[] = [];
+      for (let h = OVERNIGHT_START_HOUR; h < 24; h++) {
+        const temp = tempMap.get(hourKey(dateStr, h));
+        if (temp !== undefined) nightTemps.push(temp);
+      }
+      const nextDateStr = formatDateISO(addDays(d, 1));
+      for (let h = 0; h < OVERNIGHT_END_HOUR; h++) {
+        const temp = tempMap.get(hourKey(nextDateStr, h));
+        if (temp !== undefined) nightTemps.push(temp);
+      }
+      if (nightTemps.length >= 6) {
+        const minTemp = Math.round(Math.min(...nightTemps) * 10) / 10;
+        nights.push({ date: dateStr, minTemp });
+      }
     }
 
     results.push({
       year,
       isPartialYear: year === currentYear,
       nights,
+      days,
     });
   }
 
