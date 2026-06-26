@@ -34,7 +34,7 @@ British people love talking about the weather. During a stretch of hot weather, 
 - **Framework**: Next.js 16 with React 19 (App Router, TypeScript)
 - **APIs**: Open-Meteo (weather archive + forecast), postcodes.io (UK postcode geocoding) — both free, no keys required
 - **Caching**: Upstash Redis shared cache with in-memory fallback. Coordinates rounded to ~1km so nearby postcodes share cached results.
-- **Rate limiting**: Upstash Redis sliding window (10 req/min/IP), fails open if Redis is unavailable
+- **Rate limiting**: Upstash Redis sliding window, per-IP
 - **Styling**: Tailwind CSS 4, shadcn/ui, Bricolage Grotesque + DM Sans font pairing
 - **Hosting**: Vercel
 
