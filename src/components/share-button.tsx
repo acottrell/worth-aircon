@@ -23,7 +23,7 @@ export function ShareButton({ location, count, postcode, mode }: ShareButtonProp
         : `nights per year above 16°C overnight`;
 
   async function handleShare() {
-    const url = `https://worthaircon.com/?p=${encodeURIComponent(postcode)}`;
+    const url = `https://www.worthaircon.com/?p=${encodeURIComponent(postcode)}`;
     const text = `${location} averages ${count} ${label}. Check your area:`;
 
     if (navigator.share) {

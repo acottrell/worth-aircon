@@ -19,6 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.worthaircon.com"),
   title: "Worth Aircon? | Is air conditioning worth it where you live?",
   description:
     "Enter your UK postcode to see how many nights per year are too warm to sleep comfortably. Based on ten years of real temperature data. Independent and free.",
@@ -43,7 +44,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
   },
   alternates: {
-    canonical: "https://worthaircon.com",
+    canonical: "https://www.worthaircon.com",
   },
   robots: {
     index: true,
